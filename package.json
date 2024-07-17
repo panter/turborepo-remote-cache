@@ -42,7 +42,6 @@
     "debug": "4.3.4",
     "domain-functions": "2.5.1",
     "fs-blob-store": "6.0.0",
-    "http2-express-bridge": "^1.0.7",
     "isbot": "3.7.1",
     "koa": "^2.15.3",
     "koa-static": "^5.0.0",

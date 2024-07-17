@@ -1,33 +1,17 @@
-import type { ActionFunction, LoaderFunction } from "@remix-run/node";
-import { Readable } from "stream";
-import { CacheStorage } from "~/services/storage.server";
-import { DURATION_HEADER, getTurboContext } from "~/utils/turboContext";
-import {
-  requireCookieAuth,
-  requireTokenAuth,
-} from "~/services/authentication.server";
-import { getTeamFromRequest } from "~/services/teams.server";
-import { allowMethods, METHOD } from "~/utils/method";
-import {
-  accepted,
-  unprocessableEntity,
-  internalServerError,
-  notFound,
-  conflict,
-} from "~/utils/response";
-import {
-  existArtifactByHash,
-  getArtifactByHash,
-  getArtifactDuration,
-  getArtifactId,
-  hitArtifact,
-  insertArtifact,
-} from "~/services/artifact.server";
-import type { User } from "@prisma/client";
-import { requireTeamMember } from "~/roles/rights";
-import debug from "debug";
+import type { ActionFunction, LoaderFunction } from '@remix-run/node';
+import { Readable } from 'stream';
+import { CacheStorage } from '~/services/storage.server';
+import { DURATION_HEADER, getTurboContext } from '~/utils/turboContext';
+import { requireCookieAuth, requireTokenAuth } from '~/services/authentication.server';
+import { getTeamFromRequest } from '~/services/teams.server';
+import { allowMethods, METHOD } from '~/utils/method';
+import { accepted, unprocessableEntity, internalServerError, notFound, conflict } from '~/utils/response';
+import { existArtifactByHash, getArtifactByHash, getArtifactDuration, getArtifactId, hitArtifact, insertArtifact } from '~/services/artifact.server';
+import type { User } from '@prisma/client';
+import { requireTeamMember } from '~/roles/rights';
+import debug from 'debug';
 
-const Debugger = debug("turbo-api-artifacts");
+const Debugger = debug('turbo-api-artifacts');
 
 export const loader: LoaderFunction = async ({ request, params, context }) => {
   allowMethods(request, METHOD.GET, METHOD.PUT, METHOD.HEAD);
@@ -44,7 +28,7 @@ export const loader: LoaderFunction = async ({ request, params, context }) => {
   if (!authByToken) {
     // Overriding the turboCOntext when uath with cookie
     if (!turboCtx.hash) {
-      throw new Error("hash required");
+      throw new Error('hash required');
     }
     const artifact = await getArtifactByHash(turboCtx.hash);
     if (!artifact) {
@@ -53,7 +37,7 @@ export const loader: LoaderFunction = async ({ request, params, context }) => {
     turboCtx.team = artifact.team;
     turboCtx.user = artifact.user;
   }
-  Debugger("turboCtx: %o", turboCtx);
+  Debugger('turboCtx: %o', turboCtx);
 
   const storage = new CacheStorage();
   if (!(await storage.existArtifact(turboCtx))) {
@@ -64,7 +48,7 @@ export const loader: LoaderFunction = async ({ request, params, context }) => {
   }
   const artifactDuration = await getArtifactDuration(getArtifactId(turboCtx));
   const headers = new Headers();
-  headers.set("Content-Type", "application/octet-stream");
+  headers.set('Content-Type', 'application/octet-stream');
   headers.set(DURATION_HEADER, artifactDuration.toString());
 
   if (request.method === METHOD.HEAD) {
@@ -74,13 +58,10 @@ export const loader: LoaderFunction = async ({ request, params, context }) => {
     });
   }
   // Cast as ReadableStream because Response actually accept Readable as BodyInit
-  return new Response(
-    (await storage.readArtifact(turboCtx)) as unknown as ReadableStream,
-    {
-      status: 200,
-      headers,
-    }
-  );
+  return new Response((await storage.readArtifact(turboCtx)) as unknown as ReadableStream, {
+    status: 200,
+    headers,
+  });
 };
 
 export const action: ActionFunction = async ({ request, params, context }) => {
@@ -93,30 +74,25 @@ export const action: ActionFunction = async ({ request, params, context }) => {
   }
 
   const turboCtx = getTurboContext({ request, params, context }, user, team);
-  Debugger("turboCtx: %o", turboCtx);
+  Debugger('turboCtx: %o', turboCtx);
 
   if (!request.body) {
-    Debugger("No body");
+    Debugger('No body');
     throw unprocessableEntity();
   }
 
   if (await existArtifactByHash(turboCtx.hash!)) {
-    Debugger("Conflicting hash");
+    Debugger('Conflicting hash');
     throw conflict();
   }
 
   const storage = new CacheStorage();
 
-  const contentLength = Number.parseInt(
-    (request.headers.get("Content-Length") as string) ?? 0
-  );
+  const contentLength = Number.parseInt((request.headers.get('Content-Length') as string) ?? 0);
   try {
     await Promise.all([
       // The real type of request.body is ReadableStream. Somehow ReadableStream can be used as AsyncIterator
-      storage.writeArtifact(
-        turboCtx,
-        Readable.from(request.body as unknown as AsyncIterable<any>)
-      ),
+      storage.writeArtifact(turboCtx, Readable.from(request.body as unknown as AsyncIterable<any>)),
       insertArtifact({
         id: getArtifactId(turboCtx),
         hash: turboCtx.hash!,
