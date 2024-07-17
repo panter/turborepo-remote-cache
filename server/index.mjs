@@ -2,7 +2,9 @@ import http2 from "node:http2";
 import remix from "@remix-run/express";
 import express from "express";
 import * as build from "../build/index.js";
-const app = express();
+import http2Express from "http2-express-bridge";
+
+const app = http2Express(express);
 
 // ... code setting up your express app goes here ...
 
