@@ -18,7 +18,4 @@ export default defineConfig({
       ".*\\/data\\/.*",
     ],
   },
-  server: {
-    https: {},
-  },
 });
