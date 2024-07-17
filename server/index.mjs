@@ -8,7 +8,7 @@ const app = http2Express(express);
 
 // ... code setting up your express app goes here ...
 
-const server = http2.createServer(app);
+const server = http2.createServer({}, app);
 
 app.all(
   "*",
@@ -19,5 +19,6 @@ app.all(
 
 const port = process.env.PORT;
 server.listen(port, () => {
+  console.log(`Express server listening on port ${port}`);
   // ... code to run after your server is running goes here ...
 });
