@@ -1,24 +1,22 @@
+import Koa from "koa";
+import serve from "koa-static";
 import http2 from "node:http2";
-import remix from "@remix-run/express";
-import express from "express";
+import { createRequestHandler } from "remix-koa-adapter";
 import * as build from "../build/index.js";
-import http2Express from "http2-express-bridge";
+const app = new Koa();
 
-const app = http2Express(express);
+app.use(serve("public"));
 
-// ... code setting up your express app goes here ...
-
-const server = http2.createServer({}, app);
-
-app.all(
-  "*",
-  remix.createRequestHandler({
+app.use(
+  createRequestHandler({
     build,
   })
 );
 
+const server = http2.createServer(app.callback());
+
 const port = process.env.PORT;
 server.listen(port, () => {
-  console.log(`Express server listening on port ${port}`);
+  console.log(`server listening on port ${port}`);
   // ... code to run after your server is running goes here ...
 });
